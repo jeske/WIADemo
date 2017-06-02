@@ -1,0 +1,6 @@
+
+# gitignore
+
+WIADemo/bin/*
+WIADemo/obj/*
+*.suo
