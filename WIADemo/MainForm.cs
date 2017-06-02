@@ -78,7 +78,7 @@ namespace WIADemo
             base.OnLoad(e);
         }
 
-        private void doScan(bool previewQuality) {
+        private void doScan(WIAScanQuality scanQuality) {
             try {
                 //get list of devices available
 
@@ -92,7 +92,7 @@ namespace WIADemo
 
                     //get images from scanner
                     var pages_to_scan = 1;  
-                    images = WIAScanner.Scan(device.DeviceID, pages_to_scan, previewQuality);
+                    images = WIAScanner.Scan(device.DeviceID, pages_to_scan, scanQuality, WIAPageSize.Legal);
                     pages = images.Count;
                     if (images != null) {
                         foreach (Image image in images) {
@@ -114,10 +114,10 @@ namespace WIADemo
         }
 
         private void btnScanPreview_Click(object sender, EventArgs e) {
-            this.doScan(true);
+            this.doScan(WIAScanQuality.Preview);
         }
         private void btnScanHighQuality_Click(object sender, EventArgs e) {
-            this.doScan(false);
+            this.doScan(WIAScanQuality.Final);
         }
 
 

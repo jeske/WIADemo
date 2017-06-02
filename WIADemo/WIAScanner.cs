@@ -30,6 +30,18 @@ namespace WIADemo
          UIClassID = 10,
     }
 
+    // http://www.papersizes.org/a-paper-sizes.htm
+    public enum WIAPageSize {
+        A4, // 8.3 x 11.7 in  (210 x 297 mm)
+        Letter, // 8.5 x 11 in (216 x 279 mm)
+        Legal, // 8.5 x 14 in (216 x 356 mm)
+    }
+
+    public enum WIAScanQuality {
+        Preview,
+        Final,
+    }
+
     class WIAScanner
     {
         const string wiaFormatBMP = "{B96B3CAB-0728-11D3-9D7B-0000F81EF32E}";
@@ -71,11 +83,11 @@ namespace WIADemo
         /// Use scanner to scan an image (with user selecting the scanner from a dialog).
         /// </summary>
         /// <returns>Scanned images.</returns>
-        public static List<Image> Scan() {
+        public static List<Image> Scan(WIAScanQuality scanQuality, WIAPageSize pageSize) {
             WIA.ICommonDialog dialog = new WIA.CommonDialog();
             WIA.Device device = dialog.ShowSelectDevice(WIA.WiaDeviceType.UnspecifiedDeviceType, true, false);
             if (device != null) {
-                return Scan(device.DeviceID, 1, true);
+                return Scan(device.DeviceID, 1, scanQuality, pageSize);
             }
             else {
                 throw new Exception("You must select a device for scanning.");
@@ -87,7 +99,7 @@ namespace WIADemo
         /// </summary>
         /// <param name="scannerName"></param>
         /// <returns>Scanned images.</returns>
-        public static List<Image> Scan(string scannerId, int pages, bool previewQuality) {
+        public static List<Image> Scan(string scannerId, int pages, WIAScanQuality quality, WIAPageSize pageSize) {
             List<Image> images = new List<Image>();
             bool hasMorePages = true;
             int numbrPages = pages;
@@ -116,9 +128,38 @@ namespace WIADemo
                 SetWIAProperty(device.Properties, WIA_DEVICE_PROPERTY_PAGES_ID, 1);
                 WIA.Item item = device.Items[1] as WIA.Item;
 
-                // adjust the scan settings for 8.5 x 11 size paper
-                int dpi = previewQuality ? 150 : 600;                
-                AdjustScannerSettings(item, dpi, 0, 0, (int)(dpi * 8.5f), dpi * 11, 0, 0, 1);
+                // adjust the scan settings
+                int dpi;
+                int width_pixels;
+                int height_pixels;
+                switch (quality) {
+                    case WIAScanQuality.Preview:
+                        dpi=150;
+                        break;
+                    case WIAScanQuality.Final:
+                        dpi=600;
+                        break;
+                    default:
+                        throw new Exception("Unknown WIAScanQuality: " + quality.ToString());
+                }
+                switch (pageSize) {
+                    case WIAPageSize.A4:
+                        width_pixels = (int)(8.3f * dpi);
+                        height_pixels = (int)(11.7f * dpi);
+                        break;
+                    case WIAPageSize.Letter:
+                        width_pixels = (int)(8.5f * dpi);
+                        height_pixels = (int)(11f * dpi);
+                        break;
+                    case WIAPageSize.Legal:
+                        width_pixels = (int)(8.5f * dpi);
+                        height_pixels = (int)(14f * dpi);
+                        break;
+                    default:
+                        throw new Exception ("Unknown WIAPageSize: " + pageSize.ToString());
+                }
+                
+                AdjustScannerSettings(item, dpi, 0, 0, width_pixels, height_pixels, 0, 0, 1);
 
                 try {
                     // scan image
